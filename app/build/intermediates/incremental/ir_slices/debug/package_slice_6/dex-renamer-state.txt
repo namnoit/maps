@@ -1,0 +1,4 @@
+#Fri Apr 26 12:37:59 ICT 2019
+base.0=/home/minh/Downloads/Maps/maps/app/build/intermediates/transforms/dexMerger/debug/6
+path.0=classes.dex
+renamed.0=classes.dex
