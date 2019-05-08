@@ -4,7 +4,7 @@
     tools:context="com.example.maps.MainActivity">
     <item
         android:id="@+id/action_menu"
-        android:icon="@drawable/ic_menu"
+        android:icon="@drawable/ic_menu_black"
         android:orderInCategory="0"
         android:title="@string/action_menu"
         app:showAsAction="always" />

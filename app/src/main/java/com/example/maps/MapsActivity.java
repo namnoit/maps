@@ -1,7 +1,11 @@
 package com.example.maps;
 
-import android.support.v4.app.FragmentActivity;
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentActivity;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -22,6 +26,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            Toast.makeText(getApplicationContext(),"Failed to get location", Toast.LENGTH_LONG).show();
+            return;
+        }
+        mMap.setMyLocationEnabled(true);
     }
 
 
@@ -40,7 +51,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Add a marker in Sydney and move the camera
         LatLng hcmc = new LatLng(10.762622, 106.660172);
+
         mMap.addMarker(new MarkerOptions().position(hcmc).title("Marker in HCMC"));
+
         mMap.moveCamera(CameraUpdateFactory.newLatLng(hcmc));
+
+
     }
 }

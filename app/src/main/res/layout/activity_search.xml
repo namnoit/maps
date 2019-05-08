@@ -14,7 +14,7 @@
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
         android:layout_marginTop="5dp"
-        app:cardCornerRadius="25dp">
+        app:cardCornerRadius="5dp">
 
         <fragment
             android:id="@+id/autocomplete_fragment"
@@ -52,7 +52,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@color/colorAccent"
-            android:text="Cancel"
+            android:text="@string/cancel"
             android:textColor="@color/white" />
 
         <Button
@@ -60,20 +60,20 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@color/colorPrimary"
-            android:text="OK"
+            android:background="@color/colorPrimaryDark"
+            android:text="@string/ok"
             android:textColor="@color/white" />
 
     </LinearLayout>
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/loc"
+        android:id="@+id/loc_search"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:backgroundTint="@color/colorPrimary"
         app:fabSize="mini"
         app:srcCompat="@drawable/ic_my_location"
-        android:layout_marginLeft="10dp"
+        android:layout_marginStart="10dp"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="10dp"/>
 

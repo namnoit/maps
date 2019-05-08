@@ -3,4 +3,13 @@
     <string name="action_menu">Menu</string>
     <string name="title_activity_maps">Map</string>
     <string name="title_activity_search1">SearchActivity1</string>
+    <string name="title_location_permission">Permission Request</string>
+    <string name="text_location_permission">Allow this app to access this device\' location?</string>
+    <string name="source_point">Điểm đầu</string>
+    <string name="dest_point">Điểm cuối</string>
+    <string name="choose_source_point">Chọn điểm đầu</string>
+    <string name="choose_dest_point">Chọn điểm cuối</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Huỷ</string>
+
 </resources>
