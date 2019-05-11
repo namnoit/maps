@@ -1,18 +1,21 @@
 package com.example.maps;
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
-import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -20,7 +23,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -30,6 +32,7 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -40,15 +43,21 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.model.TypeFilter;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, com.google.android.gms.location.LocationListener {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener {
     private Toolbar toolbar;
     private com.getbase.floatingactionbutton.FloatingActionButton fab_distance, fab_alarm;
     private FloatingActionsMenu fab_menu;
@@ -57,10 +66,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Button btnSrc, btnDst, btnOk;
     private LatLng srcLL, dstLL, alarmLL = null;
     private GoogleMap mMap;
+    private AutocompleteSupportFragment autocompleteFragment;
     private FusedLocationProviderClient client;
     private LocationManager locationManager;
-    private boolean isring = true;
-    private boolean isringtone = true;
+    private boolean ringing = false, isringtone = true;
 
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
@@ -90,10 +99,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         })
                         .create()
                         .show();
-
-
             } else {
-                // No explanation needed, we can request the permission.
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSIONS_REQUEST_LOCATION);
@@ -105,41 +111,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    LocationListener locationListenerGPS = new LocationListener() {
-        @Override
-        public void onLocationChanged(android.location.Location location) {
-            Toast.makeText(MainActivity.this,"Location change",Toast.LENGTH_LONG).show();
-            if (alarmLL != null) {
-                Toast.makeText(MainActivity.this,"Location change",Toast.LENGTH_LONG).show();
-
-                Location alarmLocation = new Location("Alarm Location");
-                alarmLocation.setLatitude(alarmLL.latitude);
-                alarmLocation.setLongitude(alarmLL.longitude);
-                if (location.distanceTo(alarmLocation) < 200) {
-                    alarm();
-                }
-
-            }
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-
-        }
-    };
-
-    private void alarm() {
-        Toast.makeText(this,"den",Toast.LENGTH_LONG).show();
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        Places.initialize(getApplicationContext(), getResources().getString(R.string.place_api_key));
+        PlacesClient placesClient = Places.createClient(this);
+        addControls();
+        addEvents();
     }
 
     @Override
@@ -156,13 +135,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     if (ContextCompat.checkSelfPermission(this,
                             Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
-                        String provider = locationManager.getBestProvider(new Criteria(), false);
-                        //Request location updates:
-                        locationManager.requestLocationUpdates(provider, 400, 1, locationListenerGPS);
+                        restartApp();
                     }
 
-                } else {
-
+                }
+                else {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
 
@@ -173,29 +150,55 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        addControls();
-        addEvents();
+    private void restartApp() {
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        int mPendingIntentId = 123456;
+        PendingIntent mPendingIntent = PendingIntent.getActivity(getApplicationContext(), mPendingIntentId, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        AlarmManager mgr = (AlarmManager) getApplicationContext().getSystemService(Context.ALARM_SERVICE);
+        mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, mPendingIntent);
+        System.exit(0);
     }
 
+    public static Boolean isLocationEnabled(Context context)
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        // This is new method provided in API 28
+            LocationManager lm = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+            return lm.isLocationEnabled();
+        } else {
+        // This is Deprecated in API 28
+            int mode = Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE,
+                    Settings.Secure.LOCATION_MODE_OFF);
+            return  (mode != Settings.Secure.LOCATION_MODE_OFF);
+
+        }
+    }
 
     private void addEvents() {
         fab_distance.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                Snackbar.make(view, "Nothing here", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
                 showDistanceDialog();
             }
         });
         fab_alarm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                openSearch(SearchActivity.SEARCH_MODE_ALARM);
+                // Kiểm tra vị trí có hoạt động không
+                if (isLocationEnabled(MainActivity.this)) openSearch(SearchActivity.SEARCH_MODE_ALARM);
+                else {
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle(R.string.app_name)
+                            .setMessage("Kiểm tra vị trí thiết bị")
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    dialogInterface.dismiss();
+                                }
+                            })
+                            .create()
+                            .show();
+                }
 
             }
         });
@@ -207,13 +210,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     checkLocationPermission();
                     return;
                 }
-                mMap.setMyLocationEnabled(true);
+                if (!mMap.isMyLocationEnabled()) mMap.setMyLocationEnabled(true);
                 client.getLastLocation().addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
                     @Override
                     public void onSuccess(Location location) {
                         if (location != null) {
                             LatLng myLocation = new LatLng(location.getLatitude(), location.getLongitude());
                             mMap.moveCamera(CameraUpdateFactory.newLatLng(myLocation));
+                            mMap.animateCamera( CameraUpdateFactory.zoomTo( 15.0f ) );
                         }
                     }
                 });
@@ -232,6 +236,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 mMap.clear();
                                 alarmLL = null;
                                 btnDeleteAlarm.setVisibility(View.INVISIBLE);
+                                stopNotificationService();
                                 dialog.dismiss();
                             }
                         });
@@ -242,6 +247,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             }
                         });
                 alertDialog.show();
+            }
+        });
+
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                // TODO: Get info about the selected place.
+                LatLng ll = place.getLatLng();
+                MarkerOptions markerOptions = new MarkerOptions();
+                markerOptions.position(ll);
+                markerOptions.title(place.getAddress());
+                mMap.addMarker(markerOptions);
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(ll));
+            }
+
+            @Override
+            public void onError(Status status) {
+                // TODO: Handle the error.
+                Toast.makeText(MainActivity.this, status.toString(), Toast.LENGTH_LONG).show();
             }
         });
 
@@ -297,6 +321,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         markerOptions.title("Điểm đến");
         mMap.addMarker(markerOptions);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(alarmLL));
+
+        Intent notiIntent = new Intent(this, NotificationService.class);
+        ContextCompat.startForegroundService(this, notiIntent);
     }
 
     private void openSearch(int mode) {
@@ -376,28 +403,34 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void addControls() {
+        autocompleteFragment = (AutocompleteSupportFragment)
+                getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment_main);
+        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME));
+        autocompleteFragment.setTypeFilter(TypeFilter.ADDRESS);
+        autocompleteFragment.setCountry("VN");
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(null);
+        loc = findViewById(R.id.loc);
         fab_alarm = findViewById(R.id.fab_alarm);
         fab_distance = findViewById(R.id.fab_distance);
-        loc = findViewById(R.id.loc);
         fab_menu = findViewById(R.id.add_menu);
         fab_menu.bringToFront();
         btnDeleteAlarm = findViewById(R.id.btn_delete_alarm);
-        client = LocationServices.getFusedLocationProviderClient(this);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map_main);
         mapFragment.getMapAsync(this);
 
         locationManager = (LocationManager) this.getSystemService(LOCATION_SERVICE);
-
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             checkLocationPermission();
+            return;
         }
+        client = LocationServices.getFusedLocationProviderClient(this);
 
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
     }
 
 
@@ -422,6 +455,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             return true;        }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed()
+    {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.text_ask_to_exit)
+                .setMessage(R.string.text_advice_to_exit)
+                .setPositiveButton("Thoát", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        stopNotificationService();
+                        finish();
+                    }
+                })
+                .setNegativeButton("Không", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .create()
+                .show();
     }
 
     @Override
@@ -451,11 +507,50 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
-            public boolean onMarkerClick(Marker marker) {
-                fab_menu.collapse();
-                fab_menu.setVisibility(View.INVISIBLE);
-                btnDeleteAlarm.setVisibility(View.VISIBLE);
-                return false;
+            public boolean onMarkerClick(final Marker marker) {
+                // Kiểm tra marker có phải là alarmLL hay không
+                // Nếu phải, click vào cho phép xoá
+                // Nếu không, click vào hỏi muốn đặt làm alarmLL không
+                Location srcL = new Location("src");
+                srcL.setLongitude(marker.getPosition().longitude);
+                srcL.setLatitude(marker.getPosition().latitude);
+                Location dstL = new Location("dst");
+                if (alarmLL != null) {
+                    dstL.setLongitude(alarmLL.longitude);
+                    dstL.setLatitude(alarmLL.latitude);
+                }
+
+                if (alarmLL != null && srcL.distanceTo(dstL) == 0) {
+                    fab_menu.collapse();
+                    fab_menu.setVisibility(View.INVISIBLE);
+                    btnDeleteAlarm.setVisibility(View.VISIBLE);
+                    return false;
+                }
+                else{
+                    AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+                    alertDialog.setTitle("Đặt nhắc nhở");
+                    alertDialog.setMessage("Đặt nhắc nhở cho vị trí này?");
+                    alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    alarmLL = marker.getPosition();
+                                    mMap.clear();
+                                    MarkerOptions markerOptions = new MarkerOptions();
+                                    markerOptions.position(alarmLL);
+                                    markerOptions.title("Điểm đến");
+                                    mMap.addMarker(markerOptions);
+                                    dialog.dismiss();
+                                }
+                            });
+                    alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Huỷ",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.dismiss();
+                                }
+                            });
+                    alertDialog.show();
+                    return true;
+                }
             }
         });
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
@@ -467,14 +562,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
+
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        Toast.makeText(MainActivity.this,"Location change",Toast.LENGTH_LONG).show();
-        if (alarmLL != null) {
-            Toast.makeText(MainActivity.this,"Location change",Toast.LENGTH_LONG).show();
-
+        if (alarmLL != null && !ringing) {
             Location alarmLocation = new Location("Alarm Location");
             alarmLocation.setLatitude(alarmLL.latitude);
             alarmLocation.setLongitude(alarmLL.longitude);
@@ -485,54 +578,70 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public void Alarm(){
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
 
-        try {
-            FileInputStream fin = openFileInput("myfile");
-            int c;
-            c = fin.read();
-            if(c == '1') isringtone = true;
-            else isringtone = false;
-            c = fin.read();
-            if(c == '1') isring = true;
-            else  isring = false;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
-    private void showAlarm() {
-        final AlertDialog.Builder AlarmDialog = new AlertDialog.Builder(MainActivity.this);
-        AlarmDialog.setTitle("Báo thức");
-        LayoutInflater inflater = this.getLayoutInflater();
-        View AlarmDialogView = inflater.inflate(R.layout.alarm,null);
-        btnOk = AlarmDialogView.findViewById(R.id.btnOk);
+    @Override
+    public void onProviderEnabled(String provider) {
 
-        final AlertDialog dialog = AlarmDialog.create();
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
+
+
+    private void showAlarm() {
         startService(new Intent(this.getApplicationContext(), Music.class));
         final Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        ringing = true;
+        final long[] mVibratePattern = new long[]{0, 300, 100, 400};
 
-
-        long[] mVibratePattern = new long[]{0, 300, 100, 400};
+//        BroadcastReceiver vibrateReceiver = new BroadcastReceiver() {
+//            @Override
+//            public void onReceive(Context context, Intent intent) {
+//                if(intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
+//                    vibrator.vibrate(mVibratePattern, 3);
+//                }
+//            }
+//        };
+//
+//        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+//        registerReceiver(vibrateReceiver, filter);
 
 
         vibrator.vibrate(mVibratePattern, 3);
-        Log.e(MainActivity.class.getSimpleName(),"rung");
-        btnOk.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-            @Override
-            public void onDismiss(DialogInterface dialog) {
-                stopService(new Intent(getApplicationContext(), Music.class));
-                vibrator.cancel();
-            }
-        });
 
-        dialog.setView(AlarmDialogView);
-        dialog.show();
+        new AlertDialog.Builder(this)
+                .setTitle("Thông báo")
+                .setMessage("Sắp tới nơi")
+                .setPositiveButton("Thoát", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        mMap.clear();
+                        dialogInterface.dismiss();
+                    }
+                })
+                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        stopService(new Intent(getApplicationContext(), Music.class));
+                        vibrator.cancel();
+                        ringing = false;
+                        alarmLL = null;
+                        stopNotificationService();
+                        btnDeleteAlarm.setVisibility(View.INVISIBLE);
+                    }
+                })
+                .create()
+                .show();
+    }
+
+    private void stopNotificationService(){
+        Intent notiIntent = new Intent(getApplicationContext(), NotificationService.class);
+        stopService(notiIntent);
     }
 }

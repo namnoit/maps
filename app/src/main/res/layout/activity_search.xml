@@ -17,7 +17,7 @@
         app:cardCornerRadius="5dp">
 
         <fragment
-            android:id="@+id/autocomplete_fragment"
+            android:id="@+id/autocomplete_fragment_search"
             android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />

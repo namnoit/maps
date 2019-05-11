@@ -99,10 +99,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
     LocationListener locationListenerGPS = new LocationListener() {
         @Override
         public void onLocationChanged(android.location.Location location) {
-            double latitude = location.getLatitude();
-            double longitude = location.getLongitude();
-            String msg = "New Latitude: " + latitude + "New Longitude: " + longitude;
-            Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
+
         }
 
         @Override
@@ -158,7 +155,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
         // Initialize Places.
-        Places.initialize(getApplicationContext(), "AIzaSyCKtgLCokxsZXdy84x5_7YbRhSdV-PSRco");
+        Places.initialize(getApplicationContext(), getResources().getString(R.string.place_api_key));
         PlacesClient placesClient = Places.createClient(this);
         addControls();
 
@@ -219,9 +216,8 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
             @Override
             public void onPlaceSelected(Place place) {
                 // TODO: Get info about the selected place.
-
-//                LatLng ll = place.getLatLng();
-                Toast.makeText(SearchActivity.this, place.getAddress(), Toast.LENGTH_LONG).show();
+                LatLng ll = place.getLatLng();
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(ll));
             }
 
             @Override
@@ -236,7 +232,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     private void addControls() {
         autocompleteFragment = (AutocompleteSupportFragment)
-                getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+                getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment_search);
 
         autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME));
         autocompleteFragment.setTypeFilter(TypeFilter.ADDRESS);

@@ -14,19 +14,21 @@
         android:layout_width="302dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="   Ring tone" />
+        android:textSize="20sp"
+        android:text="Ring tone" />
 
     <Switch
         android:id="@+id/ring"
         android:layout_width="302dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="   Ring or not" />
+        android:textSize="20sp"
+        android:text="Ring or not" />
 
     <Button
         android:id="@+id/okbtn"
-        android:layout_width="53dp"
-        android:layout_height="35dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="30dp"
         android:layout_weight="1"
         android:text="Ok" />

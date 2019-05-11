@@ -11,15 +11,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.Switch;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 
 import afu.org.checkerframework.checker.nullness.qual.Nullable;
-
-import static android.content.Context.MODE_PRIVATE;
 
 public class BottomSheetDialog extends BottomSheetDialogFragment {
     View rate;
@@ -73,50 +66,44 @@ public class BottomSheetDialog extends BottomSheetDialogFragment {
                 dialog.show();
             }
         });
-        setting.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                final  AlertDialog.Builder settingDialog = new AlertDialog.Builder(getContext());
-
-                final View settingView = getLayoutInflater().inflate(R.layout.setting,null);
-                final Button ok = settingView.findViewById(R.id.okbtn);
-                final Switch ringtone = settingView.findViewById(R.id.ringtone);
-                final Switch ring = settingView.findViewById(R.id.ring);
-                final AlertDialog dialog = settingDialog.create();
-                ok.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        boolean isRingtone = ringtone.isChecked();
-                        boolean isRing = ring.isChecked();
-                        String isR;
-                        String isRt;
-                        if(isRingtone==true) isRt = "1";
-                        else isRt = "0";
-                        if(isRingtone==true) isR = "1";
-                        else isR = "0";
-
-                        fileContent = isRt + "\n" + isR;
-                        try {
-                            FileOutputStream fos = getContext().openFileOutput(file,MODE_PRIVATE);
-                            fos.write(fileContent.getBytes());
-                            fos.close();
-                            File fileDir = new File(getContext().getFilesDir(),file);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-
-                        dialog.dismiss();
-//                        getDialog().dismiss();
-
-                    }
-                });
-
-
-                dialog.setView(settingView);
-                dialog.show();
-            }
-        });
+//        setting.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                final  AlertDialog.Builder settingDialog = new AlertDialog.Builder(getContext());
+//
+//                final View settingView = getLayoutInflater().inflate(R.layout.setting,null);
+//                final Button ok = settingView.findViewById(R.id.okbtn);
+//                final Switch ringtone = settingView.findViewById(R.id.ringtone);
+//                final Switch ring = settingView.findViewById(R.id.ring);
+//                final AlertDialog dialog = settingDialog.create();
+//                ok.setOnClickListener(new View.OnClickListener() {
+//                    @Override
+//                    public void onClick(View v) {
+//                        boolean isRingtone = ringtone.isChecked();
+//                        boolean isRing = ring.isChecked();
+//                        String isR;
+//                        String isRt;
+//                        if(isRingtone==true) isRt = "1";
+//                        else isRt = "0";
+//                        if(isRingtone==true) isR = "1";
+//                        else isR = "0";
+//
+//                        fileContent = isRt + "\n" + isR;
+//                        try {
+//                            FileOutputStream fos = getContext().openFileOutput(file,MODE_PRIVATE);
+//                            fos.write(fileContent.getBytes());
+//                            fos.close();
+//                            File fileDir = new File(getContext().getFilesDir(),file);
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                        dialog.dismiss();
+//                    }
+//                });
+//                dialog.setView(settingView);
+//                dialog.show();
+//            }
+//        });
         return v;
 
     }
