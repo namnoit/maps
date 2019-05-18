@@ -14,7 +14,8 @@
         android:id="@+id/textView4"
         android:layout_width="296dp"
         android:layout_height="wrap_content"
-        android:text="Version: 1.0.0 \nAuthor: Group 3 th lon\nLast update date: 20-4-2019\nFor more information please contact us with:"
+        android:text="Version: 1.0.2 \nAuthor: Nam, Minh, Vịnh\nLast update date: 18-5-2019\nFor more information please contact us with:"
+        android:textSize="16sp"
         tools:ignore="MissingConstraints"
         tools:layout_editor_absoluteX="31dp"
         tools:layout_editor_absoluteY="35dp" />
@@ -25,6 +26,7 @@
         android:layout_height="wrap_content"
         android:text="phuongnamtruong.it@gmail.com"
         android:textColor="@color/quantum_vanillablue400"
+        android:textSize="16sp"
         tools:ignore="MissingConstraints"
         tools:layout_editor_absoluteX="31dp"
         tools:layout_editor_absoluteY="104dp" />

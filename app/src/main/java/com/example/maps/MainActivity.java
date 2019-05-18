@@ -323,6 +323,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.moveCamera(CameraUpdateFactory.newLatLng(alarmLL));
 
         Intent notiIntent = new Intent(this, NotificationService.class);
+        notiIntent.putExtra("Content","Đang đặt nhắc nhở vị trí");
         ContextCompat.startForegroundService(this, notiIntent);
     }
 
@@ -599,19 +600,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         final Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         ringing = true;
         final long[] mVibratePattern = new long[]{0, 300, 100, 400};
-
-//        BroadcastReceiver vibrateReceiver = new BroadcastReceiver() {
-//            @Override
-//            public void onReceive(Context context, Intent intent) {
-//                if(intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
-//                    vibrator.vibrate(mVibratePattern, 3);
-//                }
-//            }
-//        };
-//
-//        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
-//        registerReceiver(vibrateReceiver, filter);
-
 
         vibrator.vibrate(mVibratePattern, 3);
 
